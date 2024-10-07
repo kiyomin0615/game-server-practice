@@ -1,0 +1,36 @@
+# Build directories
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.sln.docstates
+
+# Visual Studio Code files
+.vscode/
+.vscode/*
+
+# Rider files
+.idea/
+
+# JetBrains ReSharper files
+*.DotSettings.user
+
+# Temporary files
+*.tmp
+*.temp
+
+# NuGet packages
+*.nupkg
+*.snupkg
+packages/
+
+# Logs
+*.log
+
+# MacOS files
+.DS_Store
+
+# Windows files
+Thumbs.db

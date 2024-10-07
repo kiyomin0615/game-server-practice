@@ -5,53 +5,46 @@ namespace ServerCore
 {
   class Program
   {
-    static int x = 0;
-    static int y = 0;
-    static int r1 = 0;
-    static int r2 = 0;
-
     /*
-      CPU가 최적화를 위해 코드 실행 순서를 바꿀 수 있다
-      멀티 쓰레드 환경에서는 문제가 된다
-    */ 
-    /*
-      메모리 배리어를 통해서,
-      1. CPU의 코드 실행 순서 변경을 막는다
-      2. 멀티 쓰레드간의 데이터를 '동기화'해서 '가시성'을 해결한다
+      Race Condition(경합 조건)
+      멀티 쓰레드가 하나의 자원(resource)에 접근하기 위해 경쟁하는 상황
     */
-    static void Thread1() {
-      y = 1; // Store y
-      Thread.MemoryBarrier();
-      r1 = x; // Load x
+    /*
+      Atomicity(원자성)
+      어떤 작업이 더 이상 쪼갤 수 없는 단위로 실행되어, 중간에 다른 작업으로 인해 방해받지 않는 것
+      어떤 작업이 원자성을 갖는다면, 그 작업은 완전히 실행되거나, 전혀 실행되지 않은 상태만을 갖는다(All or Nothing)
+      Race Condition을 막기 위해 원자성이 필요하다
+    */
+    static int num = 0;
+
+    static void Thread1()
+    {
+      for (int i = 0; i < 10000; i++)
+      {
+        // num++;
+        Interlocked.Increment(ref num); // 원자성을 보장한다
+      }
     }
 
-    static void Thread2() {
-      x = 1; // Store x
-      Thread.MemoryBarrier();
-      r2 = y; // Load y
+    static void Thread2()
+    {
+      for (int i = 0; i < 10000; i++)
+      {
+        // num--;
+        Interlocked.Decrement(ref num); // 원자성을 보장한다
+      }
     }
 
     static void Main(string[] args)
     {
-      int count = 0;
-      while (true) {
-        count++;
-        x = y = r1 = r2 = 0;
+      Task task1 = new Task(Thread1);
+      Task task2 = new Task(Thread2);
+      task1.Start();
+      task2.Start();
 
-        Task task1 = new Task(Thread1);
-        Task task2 = new Task(Thread2);
+      Task.WaitAll(task1, task2);
 
-        task1.Start();
-        task2.Start();
-
-        Task.WaitAll(task1, task2);
-
-        if (r1 == 0 && r2 == 0) {
-          break;
-        }
-      }
-
-      Console.WriteLine($"count: {count}");
+      Console.WriteLine(num);
     }
   }
 }

@@ -16,13 +16,20 @@ namespace ServerCore
       Race Condition을 막기 위해 원자성이 필요하다
     */
     static int num = 0;
+    static object lockObject = new Object();
 
     static void Thread1()
     {
       for (int i = 0; i < 10000; i++)
       {
-        // num++;
-        Interlocked.Increment(ref num); // 원자성을 보장한다
+        // Exclusive Lock(배타적 잠금)
+        // Dead Lock(데드락)을 조심해야 한다
+        // Case 1
+        Monitor.Enter(lockObject); // 오브젝트에 대한 락(열쇠)을 취득한다(Get Lock)
+        num++;
+        Monitor.Exit(lockObject); // 오브젝트에 대한 락(열쇠)을 반납한다(Release Lock)
+
+
       }
     }
 
@@ -30,8 +37,11 @@ namespace ServerCore
     {
       for (int i = 0; i < 10000; i++)
       {
-        // num--;
-        Interlocked.Decrement(ref num); // 원자성을 보장한다
+        // Case 2
+        // 락의 취득과 반납을 보장하기 때문에 권장되는 방식
+        lock(lockObject) {
+          num--;
+        }
       }
     }
 

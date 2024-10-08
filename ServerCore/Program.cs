@@ -17,14 +17,15 @@ namespace ServerCore
         */
         static int num = 0;
         static SpinLock spinLock = new SpinLock();
+        static ContextSwitch contextSwitch = new ContextSwitch();
 
         static void Thread1()
         {
             for (int i = 0; i < 10000; i++)
             {
-                spinLock.Acquire();
+                contextSwitch.Acquire();
                 num++;
-                spinLock.Release();
+                contextSwitch.Release();
             }
         }
 
@@ -32,9 +33,9 @@ namespace ServerCore
         {
             for (int i = 0; i < 10000; i++)
             {
-                spinLock.Acquire();
+                contextSwitch.Acquire();
                 num--;
-                spinLock.Release();
+                contextSwitch.Release();
             }
         }
 

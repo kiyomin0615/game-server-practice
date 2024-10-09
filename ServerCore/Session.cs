@@ -13,10 +13,10 @@ namespace ServerCore
 
         object lockObject = new object();
 
-        bool isPending = false;
         Queue<byte[]> sendQueue = new Queue<byte[]>();
         SocketAsyncEventArgs sendArgs = new SocketAsyncEventArgs();
         SocketAsyncEventArgs receiveArgs = new SocketAsyncEventArgs();
+        List<ArraySegment<byte>> pendingList = new List<ArraySegment<byte>>();
 
         int isDisconnected = 0;
 
@@ -72,7 +72,7 @@ namespace ServerCore
             lock (lockObject)
             {
                 sendQueue.Enqueue(sendBuffer);
-                if (!this.isPending)
+                if (pendingList.Count == 0)
                 {
                     StartSending();
                 }
@@ -82,10 +82,12 @@ namespace ServerCore
 
         void StartSending()
         {
-            this.isPending = true;
-
-            byte[] sendBuffer = this.sendQueue.Dequeue();
-            sendArgs.SetBuffer(sendBuffer, 0, sendBuffer.Length);
+            while (sendQueue.Count > 0)
+            {
+                byte[] sendBuffer = this.sendQueue.Dequeue();
+                pendingList.Add(new ArraySegment<byte>(sendBuffer, 0, sendBuffer.Length));
+            }
+            sendArgs.BufferList = pendingList; // BufferList.Add()를 사용하지 말고 직접 할당해라
 
             bool isPending = sessionSocket.SendAsync(sendArgs);
             if (!isPending)
@@ -102,15 +104,15 @@ namespace ServerCore
                 {
                     try
                     {
+                        sendArgs.BufferList = null;
+                        pendingList.Clear();
+
+                        Console.WriteLine($"Transferred Bytes: {sendArgs.BytesTransferred}");
+
                         if (sendQueue.Count > 0)
                         {
                             StartSending();
                         }
-                        else
-                        {
-                            this.isPending = false;
-                        }
-
                     }
                     catch (Exception e)
                     {

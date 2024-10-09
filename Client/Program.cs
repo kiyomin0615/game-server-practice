@@ -25,8 +25,10 @@ namespace Client
                     Console.WriteLine($"Connectecd to server({client.RemoteEndPoint}).");
 
                     // 2. Send
-                    byte[] sendBuffer = Encoding.UTF8.GetBytes("Hello Server!");
-                    client.Send(sendBuffer);
+                    for (int i = 0; i < 10; i++ ) {
+                        byte[] sendBuffer = Encoding.UTF8.GetBytes($"Hello Server! {i}\n");
+                        client.Send(sendBuffer);
+                    }
 
                     // 3. Receive
                     byte[] receiveBuffer = new byte[1024];

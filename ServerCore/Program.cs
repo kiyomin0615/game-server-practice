@@ -9,23 +9,19 @@ namespace ServerCore
     {
         static Listener listener = new Listener();
 
-        static void OnAcceptSucceeded(Socket clientSocket)
+        static void OnAcceptSucceeded(Socket sessionSocket)
         {
             try
             {
-                // Receive
-                byte[] receiveBuffer = new byte[1024];
-                int size = clientSocket.Receive(receiveBuffer); // 클라이언트로부터 데이터를 전송받는다
-                string data = Encoding.UTF8.GetString(receiveBuffer, 0, size);
-                Console.WriteLine($"[From Client] {data}");
+                Session session = new Session();
+                session.Start(sessionSocket);
 
-                // Send
                 byte[] sendBuffer = Encoding.UTF8.GetBytes("Welcome to game server!");
-                clientSocket.Send(sendBuffer); // 클라이언트로 데이터를 전송한다
+                session.Send(sendBuffer);
 
-                // Disconnect
-                clientSocket.Shutdown(SocketShutdown.Both); // 클라이언트와 서버 사이의 데이터 송수신 종료
-                clientSocket.Close(); // 클라이언트의 연결 끊기
+                Thread.Sleep(1000);
+
+                session.Disconnect();
             }
             catch (Exception e)
             {

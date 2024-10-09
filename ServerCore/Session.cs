@@ -11,21 +11,29 @@ namespace ServerCore
     {
         Socket sessionSocket;
 
+        object lockObject = new object();
+
+        bool isPending = false;
+        Queue<byte[]> sendQueue = new Queue<byte[]>();
+        SocketAsyncEventArgs sendArgs = new SocketAsyncEventArgs();
+        SocketAsyncEventArgs receiveArgs = new SocketAsyncEventArgs();
+
         int isDisconnected = 0;
 
         public void Start(Socket sessionSocket)
         {
             this.sessionSocket = sessionSocket;
 
-            SocketAsyncEventArgs receiveArgs = new SocketAsyncEventArgs();
             receiveArgs.Completed += new EventHandler<SocketAsyncEventArgs>(OnReceiveCompleted);
             receiveArgs.SetBuffer(new byte[1024], 0, 1024);
 
-            StartReceiving(receiveArgs);
+            sendArgs.Completed += new EventHandler<SocketAsyncEventArgs>(OnSendCompleted);
+
+            StartReceiving();
         }
 
         #region Receive
-        void StartReceiving(SocketAsyncEventArgs receiveArgs)
+        void StartReceiving()
         {
             bool isPending = sessionSocket.ReceiveAsync(receiveArgs);
             if (!isPending)
@@ -43,7 +51,7 @@ namespace ServerCore
                     string data = Encoding.UTF8.GetString(receiveArgs.Buffer, receiveArgs.Offset, receiveArgs.BytesTransferred);
                     Console.WriteLine($"[From Client] {data}");
 
-                    StartReceiving(receiveArgs);
+                    StartReceiving();
                 }
                 catch (Exception e)
                 {
@@ -58,10 +66,65 @@ namespace ServerCore
         }
         #endregion
 
+        #region Send
         public void Send(byte[] sendBuffer)
         {
-            sessionSocket.Send(sendBuffer); // 클라이언트로 데이터를 전송한다
+            lock (lockObject)
+            {
+                sendQueue.Enqueue(sendBuffer);
+                if (!this.isPending)
+                {
+                    StartSending();
+                }
+            }
+
         }
+
+        void StartSending()
+        {
+            this.isPending = true;
+
+            byte[] sendBuffer = this.sendQueue.Dequeue();
+            sendArgs.SetBuffer(sendBuffer, 0, sendBuffer.Length);
+
+            bool isPending = sessionSocket.SendAsync(sendArgs);
+            if (!isPending)
+            {
+                OnSendCompleted(null, sendArgs);
+            }
+        }
+
+        void OnSendCompleted(object? sender, SocketAsyncEventArgs sendArgs)
+        {
+            lock (lockObject)
+            {
+                if (sendArgs.BytesTransferred > 0 && sendArgs.SocketError == SocketError.Success)
+                {
+                    try
+                    {
+                        if (sendQueue.Count > 0)
+                        {
+                            StartSending();
+                        }
+                        else
+                        {
+                            this.isPending = false;
+                        }
+
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"OnReceiveCompleted Failed: {e}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine(sendArgs.SocketError.ToString());
+                }
+            }
+
+        }
+        #endregion
 
         public void Disconnect()
         {

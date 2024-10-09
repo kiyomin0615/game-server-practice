@@ -10,12 +10,12 @@ namespace ServerCore
     public class Listener
     {
         Socket listenerSocket;
-        Action<Socket> acceptHandler;
+        Func<Session> sessionFactory;
 
-        public void Init(IPEndPoint endPoint, Action<Socket> acceptHandler)
+        public void Init(IPEndPoint endPoint, Func<Session> sessionFactory)
         {
             this.listenerSocket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp); // TCP 프로토콜
-            this.acceptHandler += acceptHandler;
+            this.sessionFactory += sessionFactory;
 
             listenerSocket.Bind(endPoint);
 
@@ -42,7 +42,9 @@ namespace ServerCore
             // 비동기 이벤트가 성공이라면
             if (args.SocketError == SocketError.Success)
             {
-                acceptHandler.Invoke(args.AcceptSocket);
+                Session session = sessionFactory.Invoke();
+                session.Start(args.AcceptSocket);
+                session.OnConnected(args.RemoteEndPoint);
             }
             // 비동기 이벤트가 실패라면
             else

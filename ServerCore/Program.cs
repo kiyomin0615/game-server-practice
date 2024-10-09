@@ -5,30 +5,37 @@ using System.Text;
 
 namespace ServerCore
 {
+    class GameSession : Session
+    {
+        public override void OnConnected(EndPoint endPoint)
+        {
+            Console.WriteLine($"OnConnect: {endPoint}");
+
+            byte[] sendBuffer = Encoding.UTF8.GetBytes("Welcome to game server!");
+            Send(sendBuffer);
+
+            Thread.Sleep(1000);
+
+            Disconnect();
+        }
+        public override void OnDisconnected(EndPoint endPoint)
+        {
+            Console.WriteLine($"OnDisconnect: {endPoint}");
+        }
+        public override void OnReceived(ArraySegment<byte> buffer)
+        {
+            string data = Encoding.UTF8.GetString(buffer.Array, buffer.Offset, buffer.Count);
+            Console.WriteLine($"[From Client] {data}");
+        }
+        public override void OnSent(int numOfBytes)
+        {
+            Console.WriteLine($"Transferred Bytes: {numOfBytes}");
+        }
+    }
+
     class Program
     {
         static Listener listener = new Listener();
-
-        static void OnAcceptSucceeded(Socket sessionSocket)
-        {
-            try
-            {
-                Session session = new Session();
-                session.Start(sessionSocket);
-
-                byte[] sendBuffer = Encoding.UTF8.GetBytes("Welcome to game server!");
-                session.Send(sendBuffer);
-
-                Thread.Sleep(1000);
-
-                session.Disconnect();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
-
-        }
 
         static void Main(string[] args)
         {
@@ -37,7 +44,10 @@ namespace ServerCore
             IPAddress ip = ipInstance.AddressList[0]; // ip 주소
             IPEndPoint endPoint = new IPEndPoint(ip, 7777); // 엔드포인트
 
-            listener.Init(endPoint, OnAcceptSucceeded);
+            listener.Init(endPoint, () =>
+            {
+                return new GameSession();
+            });
             Console.WriteLine("Listening...");
 
             while (true)

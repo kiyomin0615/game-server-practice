@@ -4,10 +4,11 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.Text;
+using System.Net;
 
 namespace ServerCore
 {
-    public class Session
+    abstract public class Session
     {
         Socket sessionSocket;
 
@@ -17,6 +18,11 @@ namespace ServerCore
         SocketAsyncEventArgs sendArgs = new SocketAsyncEventArgs();
         SocketAsyncEventArgs receiveArgs = new SocketAsyncEventArgs();
         List<ArraySegment<byte>> pendingList = new List<ArraySegment<byte>>();
+
+        public abstract void OnConnected(EndPoint endPoint);
+        public abstract void OnDisconnected(EndPoint endPoint);
+        public abstract void OnReceived(ArraySegment<byte> buffers);
+        public abstract void OnSent(int numOfBytes);
 
         int isDisconnected = 0;
 
@@ -48,9 +54,7 @@ namespace ServerCore
             {
                 try
                 {
-                    string data = Encoding.UTF8.GetString(receiveArgs.Buffer, receiveArgs.Offset, receiveArgs.BytesTransferred);
-                    Console.WriteLine($"[From Client] {data}");
-
+                    OnReceived(new ArraySegment<byte>(receiveArgs.Buffer, receiveArgs.Offset, receiveArgs.BytesTransferred));
                     StartReceiving();
                 }
                 catch (Exception e)
@@ -107,7 +111,7 @@ namespace ServerCore
                         sendArgs.BufferList = null;
                         pendingList.Clear();
 
-                        Console.WriteLine($"Transferred Bytes: {sendArgs.BytesTransferred}");
+                        OnSent(sendArgs.BytesTransferred);
 
                         if (sendQueue.Count > 0)
                         {
@@ -134,6 +138,8 @@ namespace ServerCore
             {
                 return;
             }
+
+            OnDisconnected(sessionSocket.RemoteEndPoint);
 
             sessionSocket.Shutdown(SocketShutdown.Both); // 클라이언트와 서버 사이의 데이터 송수신 종료
             sessionSocket.Close(); // 클라이언트의 연결 끊기

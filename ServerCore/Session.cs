@@ -12,6 +12,8 @@ namespace ServerCore
     {
         Socket sessionSocket;
 
+        ReceiveBuffer receiveBuffer = new ReceiveBuffer(1024);
+
         object lockObject = new object();
 
         Queue<byte[]> sendQueue = new Queue<byte[]>();
@@ -21,7 +23,7 @@ namespace ServerCore
 
         public abstract void OnConnected(EndPoint endPoint);
         public abstract void OnDisconnected(EndPoint endPoint);
-        public abstract void OnReceived(ArraySegment<byte> buffers);
+        public abstract int OnReceived(ArraySegment<byte> buffers);
         public abstract void OnSent(int numOfBytes);
 
         int isDisconnected = 0;
@@ -31,8 +33,6 @@ namespace ServerCore
             this.sessionSocket = sessionSocket;
 
             receiveArgs.Completed += new EventHandler<SocketAsyncEventArgs>(OnReceiveCompleted);
-            receiveArgs.SetBuffer(new byte[1024], 0, 1024);
-
             sendArgs.Completed += new EventHandler<SocketAsyncEventArgs>(OnSendCompleted);
 
             StartReceiving();
@@ -41,6 +41,11 @@ namespace ServerCore
         #region Receive
         void StartReceiving()
         {
+            receiveBuffer.Clear();
+
+            ArraySegment<byte> writeSegment = receiveBuffer.writeSegment;
+            receiveArgs.SetBuffer(writeSegment.Array, writeSegment.Offset, writeSegment.Count);
+
             bool isPending = sessionSocket.ReceiveAsync(receiveArgs);
             if (!isPending)
             {
@@ -54,7 +59,25 @@ namespace ServerCore
             {
                 try
                 {
-                    OnReceived(new ArraySegment<byte>(receiveArgs.Buffer, receiveArgs.Offset, receiveArgs.BytesTransferred));
+                    if (receiveBuffer.OnWrite(receiveArgs.BytesTransferred) == false)
+                    {
+                        Disconnect();
+                        return;
+                    }
+
+                    int processLength = OnReceived(receiveBuffer.readSegment);
+                    if (processLength < 0 || receiveBuffer.dataSize < processLength)
+                    {
+                        Disconnect();
+                        return;
+                    }
+
+                    if (receiveBuffer.OnRead(processLength) == false)
+                    {
+                        Disconnect();
+                        return;
+                    }
+
                     StartReceiving();
                 }
                 catch (Exception e)
@@ -81,7 +104,6 @@ namespace ServerCore
                     StartSending();
                 }
             }
-
         }
 
         void StartSending()

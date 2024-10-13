@@ -22,10 +22,12 @@ namespace Client
         {
             Console.WriteLine($"OnDisconnect: {endPoint}");
         }
-        public override void OnReceived(ArraySegment<byte> buffer)
+        public override int OnReceived(ArraySegment<byte> buffer)
         {
             string data = Encoding.UTF8.GetString(buffer.Array, buffer.Offset, buffer.Count);
             Console.WriteLine($"[From Server] {data}");
+
+            return buffer.Count;
         }
         public override void OnSent(int numOfBytes)
         {

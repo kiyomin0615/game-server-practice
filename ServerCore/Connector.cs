@@ -32,7 +32,7 @@ namespace ServerCore
                 return;
 
             bool isPending = socket.ConnectAsync(args);
-            if (isPending)
+            if (!isPending)
             {
                 OnConnectCompleted(null, args);
             }

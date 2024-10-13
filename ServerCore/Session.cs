@@ -16,7 +16,7 @@ namespace ServerCore
 
         object lockObject = new object();
 
-        Queue<byte[]> sendQueue = new Queue<byte[]>();
+        Queue<ArraySegment<byte>> sendQueue = new Queue<ArraySegment<byte>>();
         SocketAsyncEventArgs sendArgs = new SocketAsyncEventArgs();
         SocketAsyncEventArgs receiveArgs = new SocketAsyncEventArgs();
         List<ArraySegment<byte>> pendingList = new List<ArraySegment<byte>>();
@@ -94,7 +94,7 @@ namespace ServerCore
         #endregion
 
         #region Send
-        public void Send(byte[] sendBuffer)
+        public void Send(ArraySegment<byte> sendBuffer)
         {
             lock (lockObject)
             {
@@ -110,8 +110,8 @@ namespace ServerCore
         {
             while (sendQueue.Count > 0)
             {
-                byte[] sendBuffer = this.sendQueue.Dequeue();
-                pendingList.Add(new ArraySegment<byte>(sendBuffer, 0, sendBuffer.Length));
+                ArraySegment<byte> sendBuffer = this.sendQueue.Dequeue();
+                pendingList.Add(sendBuffer);
             }
             sendArgs.BufferList = pendingList; // BufferList.Add()를 사용하지 말고 직접 할당해라
 

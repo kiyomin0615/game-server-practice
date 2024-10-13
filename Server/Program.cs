@@ -6,13 +6,25 @@ using ServerCore;
 
 namespace Server
 {
+    class Player {
+        public int hp;
+        public int attack;
+    }
+
     class GameSession : Session
     {
         public override void OnConnected(EndPoint endPoint)
         {
             Console.WriteLine($"OnConnect: {endPoint}");
 
-            byte[] sendBuffer = Encoding.UTF8.GetBytes("Welcome to game server!");
+            Player player = new Player() { hp = 100, attack = 10};
+
+            ArraySegment<byte> openSegment = SendBufferHelper.Open(4096);
+            byte[] bytes1 = BitConverter.GetBytes(player.hp);
+            byte[] bytes2 = BitConverter.GetBytes(player.attack);
+            Array.Copy(bytes1, 0, openSegment.Array, openSegment.Offset, bytes1.Length);
+            Array.Copy(bytes2, 0, openSegment.Array, openSegment.Offset + bytes1.Length, bytes2.Length);
+            ArraySegment<byte> sendBuffer = SendBufferHelper.Close(bytes1.Length + bytes2.Length);
             Send(sendBuffer);
 
             Thread.Sleep(1000);

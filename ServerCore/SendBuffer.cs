@@ -50,7 +50,7 @@ namespace ServerCore
 
         public ArraySegment<byte> Close(int usedSize)
         {
-            ArraySegment<byte> segment = new ArraySegment<byte>(buffer, usedSize, usedSize);
+            ArraySegment<byte> segment = new ArraySegment<byte>(buffer, this.usedSize, usedSize);
             this.usedSize += usedSize;
             return segment;
         }

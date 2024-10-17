@@ -24,8 +24,10 @@ namespace Client
         }
         public override int OnReceived(ArraySegment<byte> buffer)
         {
-            string data = Encoding.UTF8.GetString(buffer.Array, buffer.Offset, buffer.Count);
-            Console.WriteLine($"[From Server] {data}");
+            int hp = BitConverter.ToInt32(buffer.Array, buffer.Offset); // 첫 4바이트에서 HP
+            int attack = BitConverter.ToInt32(buffer.Array, buffer.Offset + sizeof(int)); // 다음 4바이트에서 Attack
+
+            Console.WriteLine($"[From Server] HP: {hp}, Attack: {attack}");
 
             return buffer.Count;
         }
@@ -54,13 +56,13 @@ namespace Client
             {
                 try
                 {
+                    Console.WriteLine("Client is running...");
+                    Thread.Sleep(2000);
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e.ToString());
                 }
-
-                Thread.Sleep(1000);
             }
         }
     }

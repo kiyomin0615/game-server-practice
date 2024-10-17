@@ -44,7 +44,7 @@ namespace ServerCore
             {
                 Session session = sessionFactory.Invoke();
                 session.Start(args.AcceptSocket);
-                session.OnConnected(args.RemoteEndPoint);
+                session.OnConnected(args.AcceptSocket.RemoteEndPoint);
             }
             // 비동기 이벤트가 실패라면
             else

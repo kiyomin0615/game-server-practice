@@ -6,15 +6,30 @@ using ServerCore;
 
 namespace Client
 {
+    class Packet
+    {
+        public ushort size;
+        public ushort id;
+    }
+
     class GameSession : Session
     {
         public override void OnConnected(EndPoint endPoint)
         {
             Console.WriteLine($"OnConnect: {endPoint}");
 
-            for (int i = 0; i < 10; i++)
+            Packet packet = new Packet() { size = 4, id = 1 };
+
+            for (int i = 0; i < 5; i++)
             {
-                byte[] sendBuffer = Encoding.UTF8.GetBytes($"Hello Server! {i}\n");
+                ArraySegment<byte> openSegment = SendBufferHelper.Open(4096);
+                byte[] bytes1 = BitConverter.GetBytes(packet.size);
+                byte[] bytes2 = BitConverter.GetBytes(packet.id);
+
+                Array.Copy(bytes1, 0, openSegment.Array, openSegment.Offset, bytes1.Length);
+                Array.Copy(bytes2, 0, openSegment.Array, openSegment.Offset + bytes1.Length, bytes2.Length);
+                ArraySegment<byte> sendBuffer = SendBufferHelper.Close(packet.size);
+
                 Send(sendBuffer);
             }
         }

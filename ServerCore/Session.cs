@@ -8,6 +8,36 @@ using System.Net;
 
 namespace ServerCore
 {
+    abstract public class PacketSession : Session
+    {
+        public static readonly int HeaderSize = 2;
+
+        public sealed override int OnReceived(ArraySegment<byte> buffer)
+        {
+            int processLength = 0;
+
+            while (true)
+            {
+                if (buffer.Count < HeaderSize)
+                    break;
+
+                ushort dataSize = BitConverter.ToUInt16(buffer.Array, buffer.Offset);
+                if (buffer.Count < dataSize)
+                    break;
+
+                OnPacketReceived(new ArraySegment<byte>(buffer.Array, buffer.Offset, dataSize));
+
+                processLength = dataSize;
+                buffer = new ArraySegment<byte>(buffer.Array, buffer.Offset + dataSize, buffer.Count - dataSize);
+            }
+
+            return processLength;
+        }
+
+        abstract public void OnPacketReceived(ArraySegment<byte> buffer);
+
+    }
+
     abstract public class Session
     {
         Socket sessionSocket;

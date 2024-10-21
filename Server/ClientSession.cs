@@ -60,7 +60,7 @@ namespace Server
         {
             // Deserialization
             ushort count = 0;
-            ushort size = BitConverter.ToUInt16(buffer.Array, buffer.Offset);
+            ushort size = BitConverter.ToUInt16(buffer.Array, buffer.Offset + count);
             count += 2;
             ushort id = BitConverter.ToUInt16(buffer.Array, buffer.Offset + count);
             count += 2;
@@ -72,8 +72,9 @@ namespace Server
                     count += 8;
                     Console.WriteLine($"PlayerInfoRequest\nPlayer ID: {playerId}");
                     break;
-
                 case PacketId.PlayerInfoResponse:
+                    break;
+                default:
                     break;
             }
 

@@ -35,27 +35,27 @@ namespace Client
         {
             Console.WriteLine($"OnConnect: {endPoint}");
 
-            PlayerInfoRequest packet = new PlayerInfoRequest() { size = 4, id = (ushort)PacketId.PlayerInfoRequest, playerId = 1001 };
+            PlayerInfoRequest packet = new PlayerInfoRequest() { id = (ushort)PacketId.PlayerInfoRequest, playerId = 1001 };
 
-            // for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 5; i++)
             {
                 ArraySegment<byte> seg = SendBufferHelper.Open(4096);
 
                 // Serialization
-                byte[] size = BitConverter.GetBytes(packet.size);
-                byte[] id = BitConverter.GetBytes(packet.id);
-                byte[] playerId = BitConverter.GetBytes(packet.playerId);
-
                 ushort count = 0;
-                Array.Copy(size, 0, seg.Array, seg.Offset + count, size.Length);
-                count += (ushort)size.Length;
-                Array.Copy(id, 0, seg.Array, seg.Offset + count, id.Length);
-                count += (ushort)id.Length;
-                Array.Copy(playerId, 0, seg.Array, seg.Offset + count, playerId.Length);
-                count += (ushort)playerId.Length;
+                bool success = true;
+
+                count += 2;
+                success &= BitConverter.TryWriteBytes(new Span<byte>(seg.Array, seg.Offset + count, seg.Count - count), packet.id);
+                count += 2;
+                success &= BitConverter.TryWriteBytes(new Span<byte>(seg.Array, seg.Offset + count, seg.Count - count), packet.playerId);
+                count += 8;
+                success &= BitConverter.TryWriteBytes(new Span<byte>(seg.Array, seg.Offset, seg.Count), count);
+
                 ArraySegment<byte> sendBuffer = SendBufferHelper.Close(count);
 
-                Send(sendBuffer);
+                if (success)
+                    Send(sendBuffer);
             }
         }
 

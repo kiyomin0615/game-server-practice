@@ -12,21 +12,72 @@ namespace Server
         PlayerInfoResponse = 2
     }
 
-    class Packet
+    public abstract class Packet
     {
         public ushort size;
         public ushort id;
+
+        public abstract ArraySegment<byte> Serialize();
+        public abstract void Deserialize(ArraySegment<byte> segment);
     }
 
     class PlayerInfoRequest : Packet
     {
+        public PlayerInfoRequest()
+        {
+            this.id = (ushort)PacketId.PlayerInfoRequest;
+        }
+
         public long playerId;
+
+        public override void Deserialize(ArraySegment<byte> seg)
+        {
+            ushort count = 0;
+
+            ushort size = BitConverter.ToUInt16(seg.Array, seg.Offset + count);
+            count += 2;
+            ushort id = BitConverter.ToUInt16(seg.Array, seg.Offset + count);
+            count += 2;
+
+            this.playerId = BitConverter.ToInt64(new ReadOnlySpan<byte>(seg.Array, seg.Offset + count, seg.Count - count));
+            count += 8;
+        }
+
+        public override ArraySegment<byte> Serialize()
+        {
+            ArraySegment<byte> seg = SendBufferHelper.Open(4096);
+
+            ushort count = 0;
+            bool success = true;
+
+            count += 2;
+            success &= BitConverter.TryWriteBytes(new Span<byte>(seg.Array, seg.Offset + count, seg.Count - count), this.id);
+            count += 2;
+            success &= BitConverter.TryWriteBytes(new Span<byte>(seg.Array, seg.Offset + count, seg.Count - count), this.playerId);
+            count += 8;
+            success &= BitConverter.TryWriteBytes(new Span<byte>(seg.Array, seg.Offset, seg.Count), count);
+
+            if (success == false)
+                return null;
+
+            return SendBufferHelper.Close(count);
+        }
     }
 
     class PlayerInfoResponse : Packet
     {
         public int hp;
         public int attack;
+
+        public override void Deserialize(ArraySegment<byte> segment)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override ArraySegment<byte> Serialize()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     class ClientSession : PacketSession
@@ -68,9 +119,9 @@ namespace Server
             switch ((PacketId)id)
             {
                 case PacketId.PlayerInfoRequest:
-                    long playerId = BitConverter.ToInt64(buffer.Array, buffer.Offset + count);
-                    count += 8;
-                    Console.WriteLine($"PlayerInfoRequest\nPlayer ID: {playerId}");
+                    PlayerInfoRequest packet = new PlayerInfoRequest();
+                    packet.Deserialize(buffer);
+                    Console.WriteLine($"PlayerInfoRequest\nPlayer ID: {packet.playerId}");
                     break;
                 case PacketId.PlayerInfoResponse:
                     break;

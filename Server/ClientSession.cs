@@ -23,24 +23,26 @@ namespace Server
 
     class PlayerInfoRequest : Packet
     {
+        public long playerId;
+
         public PlayerInfoRequest()
         {
             this.id = (ushort)PacketId.PlayerInfoRequest;
         }
 
-        public long playerId;
-
         public override void Deserialize(ArraySegment<byte> seg)
         {
             ushort count = 0;
 
-            ushort size = BitConverter.ToUInt16(seg.Array, seg.Offset + count);
-            count += 2;
-            ushort id = BitConverter.ToUInt16(seg.Array, seg.Offset + count);
-            count += 2;
+            ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(seg.Array, seg.Offset, seg.Count);
 
-            this.playerId = BitConverter.ToInt64(new ReadOnlySpan<byte>(seg.Array, seg.Offset + count, seg.Count - count));
-            count += 8;
+            ushort size = BitConverter.ToUInt16(seg.Array, seg.Offset + count);
+            count += sizeof(ushort);
+            ushort id = BitConverter.ToUInt16(seg.Array, seg.Offset + count);
+            count += sizeof(ushort);
+
+            this.playerId = BitConverter.ToInt64(span.Slice(count, span.Length - count));
+            count += sizeof(long);
         }
 
         public override ArraySegment<byte> Serialize()
@@ -50,12 +52,14 @@ namespace Server
             ushort count = 0;
             bool success = true;
 
-            count += 2;
-            success &= BitConverter.TryWriteBytes(new Span<byte>(seg.Array, seg.Offset + count, seg.Count - count), this.id);
-            count += 2;
-            success &= BitConverter.TryWriteBytes(new Span<byte>(seg.Array, seg.Offset + count, seg.Count - count), this.playerId);
-            count += 8;
-            success &= BitConverter.TryWriteBytes(new Span<byte>(seg.Array, seg.Offset, seg.Count), count);
+            Span<byte> span = new Span<byte>(seg.Array, seg.Offset, seg.Count);
+
+            count += sizeof(ushort);
+            success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), this.id);
+            count += sizeof(ushort);
+            success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), this.playerId);
+            count += sizeof(long);
+            success &= BitConverter.TryWriteBytes(span, count);
 
             if (success == false)
                 return null;

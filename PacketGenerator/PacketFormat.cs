@@ -58,6 +58,31 @@ namespace PacketGenerator
 @"public {0} {1};";
 
         /*
+         * {0} : Item name
+         * {1} : item name
+         * {2} : member variables
+         * {3} : deserialize members
+         * {4} : serialize members
+         */
+        public static string memberListFormat =
+@"public struct {0}
+{{
+    {2}
+    public void Deserialize(ReadOnlySpan<byte> span, ref ushort count)
+    {{
+        {3}
+    }}
+    public bool Serialize(Span<byte> span, ref ushort count)
+    {{
+        bool success = true;
+        {4}
+        return success;
+    }}
+}}
+
+public List<{0}> {1}s = new List<{0}>();";
+
+        /*
          * {0} : member name
          * {1} : deserialize method
          * {1} : member type
@@ -76,6 +101,21 @@ this.playerName = Encoding.Unicode.GetString(span.Slice(count, {0}Length));
 count += {0}Length;";
 
         /*
+         * {0} : Item name
+         * {1} : item name
+         */
+        public static string deserializeListFormat =
+@"this.{1}s.Clear();
+ushort {1}Length = BitConverter.ToUInt16(span.Slice(count, span.Length - count));
+count += sizeof(ushort);
+for (int i = 0; i < {0}Length; i++)
+{{
+    {0} {1} = new {0}();
+    {1}.Deserialize(span, ref count);
+    {1}s.Add({1});
+}}";
+
+        /*
          * {0} : member name
          * {1} : member type
          */
@@ -91,5 +131,17 @@ count += sizeof({1});";
 success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), {0}Length);
 count += sizeof(ushort);
 count += {0}Length;";
+
+        /*
+         * {0} : Item name
+         * {1} : item name
+         */
+        public static string serializeListFormat =
+@"success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort){1}s.Count);
+count += sizeof(ushort);
+foreach ({0} {1} in this.{1}s)
+{{
+    success &= {1}.Serialize(span, ref count);
+}}";
     }
 }

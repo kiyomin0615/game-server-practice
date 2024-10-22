@@ -99,8 +99,10 @@ namespace PacketGenerator
 						serializeCode += string.Format(PacketFormat.serializeStringFormat, memberName);
 						break;
 					case "list":
-						break;
-					case "skill":
+						Tuple<string, string, string> tuple = ParsePacketContentList(reader);
+						memberCode += tuple.Item1;
+						deserializeCode += tuple.Item2;
+						serializeCode += tuple.Item3;
 						break;
 					default:
 						break;
@@ -110,6 +112,39 @@ namespace PacketGenerator
 			memberCode = memberCode.Replace("\n", "\n\t");
 			deserializeCode = deserializeCode.Replace("\n", "\n\t\t");
 			serializeCode = serializeCode.Replace("\n", "\n\t\t");
+			return new Tuple<string, string, string>(memberCode, deserializeCode, serializeCode);
+		}
+
+		public static Tuple<string, string, string> ParsePacketContentList(XmlReader reader)
+		{
+			string listName = reader["name"];
+			if (string.IsNullOrEmpty(listName))
+			{
+				Console.WriteLine("No List Name");
+				return null;
+			}
+
+			Tuple<string, string, string> tuple = ParsePacketContent(reader);
+
+			string memberCode = string.Format(
+				PacketFormat.memberListFormat,
+				ReplaceFirstCharacterWithUpperCase(listName),
+				ReplaceFirstCharacterWithLowerCase(listName),
+				tuple.Item1,
+				tuple.Item2,
+				tuple.Item3
+			);
+			string deserializeCode = string.Format(
+				PacketFormat.deserializeListFormat,
+				ReplaceFirstCharacterWithUpperCase(listName),
+				ReplaceFirstCharacterWithLowerCase(listName)
+			);
+			string serializeCode = string.Format(
+				PacketFormat.serializeListFormat,
+				ReplaceFirstCharacterWithUpperCase(listName),
+				ReplaceFirstCharacterWithLowerCase(listName)
+			);
+
 			return new Tuple<string, string, string>(memberCode, deserializeCode, serializeCode);
 		}
 
@@ -134,6 +169,22 @@ namespace PacketGenerator
 				default:
 					return "";
 			}
+		}
+
+		public static string ReplaceFirstCharacterWithUpperCase(string input)
+		{
+			if (string.IsNullOrEmpty(input))
+				return "";
+
+			return input[0].ToString().ToUpper() + input.Substring(1);
+		}
+
+		public static string ReplaceFirstCharacterWithLowerCase(string input)
+		{
+			if (string.IsNullOrEmpty(input))
+				return "";
+
+			return input[0].ToString().ToLower() + input.Substring(1);
 		}
 	}
 }

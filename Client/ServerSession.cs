@@ -26,6 +26,38 @@ namespace Client
         public long playerId;
         public string playerName;
 
+        public struct Skill
+        {
+            public int id;
+            public ushort level;
+            public float duration;
+
+            public bool Serialize(Span<byte> span, ref ushort count)
+            {
+                bool success = true;
+                success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), id);
+                count += sizeof(int);
+                success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), level);
+                count += sizeof(ushort);
+                success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), duration);
+                count += sizeof(float);
+
+                return success;
+            }
+
+            public void Deserialize(ReadOnlySpan<byte> span, ref ushort count)
+            {
+                id = BitConverter.ToInt32(span.Slice(count, span.Length - count));
+                count += sizeof(int);
+                level = BitConverter.ToUInt16(span.Slice(count, span.Length - count));
+                count += sizeof(ushort);
+                duration = BitConverter.ToSingle(span.Slice(count, span.Length - count));
+                count += sizeof(float);
+            }
+        }
+
+        public List<Skill> skills = new List<Skill>();
+
         public PlayerInfoRequest()
         {
             this.id = (ushort)PacketId.PlayerInfoRequest;
@@ -46,6 +78,17 @@ namespace Client
             ushort playerNameLength = BitConverter.ToUInt16(span.Slice(count, span.Length - count));
             count += sizeof(ushort);
             this.playerName = Encoding.Unicode.GetString(span.Slice(count, playerNameLength));
+            count += playerNameLength;
+
+            skills.Clear();
+            ushort skillLength = BitConverter.ToUInt16(span.Slice(count, span.Length - count));
+            count += sizeof(ushort);
+            for (int i = 0; i < skillLength; i++)
+            {
+                Skill skill = new Skill();
+                skill.Deserialize(span, ref count);
+                skills.Add(skill);
+            }
         }
 
         public override ArraySegment<byte> Serialize()
@@ -63,12 +106,17 @@ namespace Client
             success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), this.playerId);
             count += sizeof(long);
 
-            // Case 01
-            ushort playerNameLength = (ushort)Encoding.Unicode.GetByteCount(this.playerName); // UTF-16
+            ushort playerNameLength = (ushort)Encoding.Unicode.GetBytes(this.playerName, 0, this.playerName.Length, segment.Array, segment.Offset + count + sizeof(ushort));
             success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), playerNameLength);
             count += sizeof(ushort);
-            Array.Copy(Encoding.Unicode.GetBytes(this.playerName), 0, segment.Array, count, playerNameLength);
             count += playerNameLength;
+
+            success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort)skills.Count);
+            count += sizeof(ushort);
+            foreach (Skill skill in skills)
+            {
+                success &= skill.Serialize(span, ref count);
+            }
 
             success &= BitConverter.TryWriteBytes(span, count);
 
@@ -102,6 +150,10 @@ namespace Client
             Console.WriteLine($"OnConnect: {endPoint}");
 
             PlayerInfoRequest packet = new PlayerInfoRequest() { playerId = 1001, playerName = "kiyomin" };
+            packet.skills.Add(new PlayerInfoRequest.Skill() { id = 101, level = 1, duration = 1.0f });
+            packet.skills.Add(new PlayerInfoRequest.Skill() { id = 201, level = 2, duration = 2.0f });
+            packet.skills.Add(new PlayerInfoRequest.Skill() { id = 301, level = 3, duration = 3.0f });
+            packet.skills.Add(new PlayerInfoRequest.Skill() { id = 401, level = 4, duration = 4.0f });
 
             ArraySegment<byte> sendBuffer = packet.Serialize();
 

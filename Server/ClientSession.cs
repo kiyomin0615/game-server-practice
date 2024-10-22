@@ -26,6 +26,38 @@ namespace Server
         public long playerId;
         public string playerName;
 
+        public struct Skill
+        {
+            public int id;
+            public ushort level;
+            public float duration;
+
+            public bool Serialize(Span<byte> span, ref ushort count)
+            {
+                bool success = true;
+                success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), id);
+                count += sizeof(int);
+                success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), level);
+                count += sizeof(ushort);
+                success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), duration);
+                count += sizeof(float);
+
+                return success;
+            }
+
+            public void Deserialize(ReadOnlySpan<byte> span, ref ushort count)
+            {
+                id = BitConverter.ToInt32(span.Slice(count, span.Length - count));
+                count += sizeof(int);
+                level = BitConverter.ToUInt16(span.Slice(count, span.Length - count));
+                count += sizeof(ushort);
+                duration = BitConverter.ToSingle(span.Slice(count, span.Length - count));
+                count += sizeof(float);
+            }
+        }
+
+        public List<Skill> skills = new List<Skill>();
+
         public PlayerInfoRequest()
         {
             this.id = (ushort)PacketId.PlayerInfoRequest;
@@ -46,6 +78,17 @@ namespace Server
             ushort playerNameLength = BitConverter.ToUInt16(span.Slice(count, span.Length - count));
             count += sizeof(ushort);
             this.playerName = Encoding.Unicode.GetString(span.Slice(count, playerNameLength));
+            count += playerNameLength;
+
+            skills.Clear();
+            ushort skillLength = BitConverter.ToUInt16(span.Slice(count, span.Length - count));
+            count += sizeof(ushort);
+            for (int i = 0; i < skillLength; i++)
+            {
+                Skill skill = new Skill();
+                skill.Deserialize(span, ref count);
+                skills.Add(skill);
+            }
         }
 
         public override ArraySegment<byte> Serialize()
@@ -63,11 +106,17 @@ namespace Server
             success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), this.playerId);
             count += sizeof(long);
 
-            // Case 02
             ushort playerNameLength = (ushort)Encoding.Unicode.GetBytes(this.playerName, 0, this.playerName.Length, segment.Array, segment.Offset + count + sizeof(ushort));
             success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), playerNameLength);
             count += sizeof(ushort);
             count += playerNameLength;
+
+            success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort)skills.Count);
+            count += sizeof(ushort);
+            foreach (Skill skill in skills)
+            {
+                success &= skill.Serialize(span, ref count);
+            }
 
             success &= BitConverter.TryWriteBytes(span, count);
 
@@ -135,7 +184,13 @@ namespace Server
                 case PacketId.PlayerInfoRequest:
                     PlayerInfoRequest packet = new PlayerInfoRequest();
                     packet.Deserialize(buffer);
-                    Console.WriteLine($"PlayerInfoRequest\nPlayer ID: {packet.playerId}, Player Name: {packet.playerName}");
+                    Console.WriteLine($"PlayerInfoRequest\nPlayer ID: {packet.playerId}, Player Name: {packet.playerName}\n");
+
+                    foreach (PlayerInfoRequest.Skill skill in packet.skills)
+                    {
+                        Console.WriteLine($"Skill ID: {skill.id}, Skill Level: {skill.level}, Skill Duration: {skill.duration}\n");
+                    }
+
                     break;
                 case PacketId.PlayerInfoResponse:
                     break;

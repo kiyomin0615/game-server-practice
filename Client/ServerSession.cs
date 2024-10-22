@@ -12,16 +12,7 @@ namespace Client
         PlayerInfoResponse = 2
     }
 
-    public abstract class Packet
-    {
-        public ushort size;
-        public ushort id;
-
-        public abstract ArraySegment<byte> Serialize();
-        public abstract void Deserialize(ArraySegment<byte> segment);
-    }
-
-    class PlayerInfoRequest : Packet
+    class PlayerInfoRequest
     {
         public long playerId;
         public string playerName;
@@ -58,12 +49,7 @@ namespace Client
 
         public List<Skill> skills = new List<Skill>();
 
-        public PlayerInfoRequest()
-        {
-            this.id = (ushort)PacketId.PlayerInfoRequest;
-        }
-
-        public override void Deserialize(ArraySegment<byte> segment)
+        public void Deserialize(ArraySegment<byte> segment)
         {
             ushort count = 0;
 
@@ -91,7 +77,7 @@ namespace Client
             }
         }
 
-        public override ArraySegment<byte> Serialize()
+        public ArraySegment<byte> Serialize()
         {
             ArraySegment<byte> segment = SendBufferHelper.Open(4096);
 
@@ -101,7 +87,7 @@ namespace Client
             Span<byte> span = new Span<byte>(segment.Array, segment.Offset, segment.Count);
 
             count += sizeof(ushort);
-            success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), this.id);
+            success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort)PacketId.PlayerInfoRequest);
             count += sizeof(ushort);
             success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), this.playerId);
             count += sizeof(long);
@@ -127,20 +113,10 @@ namespace Client
         }
     }
 
-    class PlayerInfoResponse : Packet
+    class PlayerInfoResponse
     {
         public int hp;
         public int attack;
-
-        public override void Deserialize(ArraySegment<byte> segment)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override ArraySegment<byte> Serialize()
-        {
-            throw new NotImplementedException();
-        }
     }
 
     class ServerSession : Session

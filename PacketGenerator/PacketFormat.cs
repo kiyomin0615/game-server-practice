@@ -35,8 +35,7 @@ public enum PacketID
          * {3} : serialize members
          */
         public static string packetFormat =
-@"
-class {0}
+@"class {0}
 {{
     {1}
     public void Deserialize(ArraySegment<byte> segment)
@@ -60,7 +59,7 @@ class {0}
         Span<byte> span = new Span<byte>(segment.Array, segment.Offset, segment.Count);
 
         count += sizeof(ushort);
-        success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort)PacketId.{0});
+        success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort)PacketID.{0});
         count += sizeof(ushort);
         {3}
         success &= BitConverter.TryWriteBytes(span, count);
@@ -117,6 +116,15 @@ count += sizeof({2});
 ";
 
         /*
+         * {0} : variable name
+         * {1} : variable type
+         */
+        public static string deserializeByteFormat =
+@"this.{0} = ({1})segment.Array[segment.Offset + count];
+count += sizeof({1});
+";
+
+        /*
          * {0} : member name
          */
         public static string deserializeStringFormat =
@@ -148,6 +156,15 @@ for (int i = 0; i < {1}Length; i++)
          */
         public static string serializeFormat =
 @"success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), this.{0});
+count += sizeof({1});
+";
+
+        /*
+         * {0} : variable name
+         * {1} : variable type
+         */
+        public static string serializeByteFormat =
+@"segment.Array[segment.Offset + count] = ({1})this.{0};
 count += sizeof({1});
 ";
 

@@ -86,8 +86,13 @@ namespace PacketGenerator
 				string memberType = reader.Name.ToLower();
 				switch (memberType)
 				{
-					case "bool":
 					case "byte":
+					case "sbyte":
+						memberCode += string.Format(PacketFormat.memberFormat, memberType, memberName);
+						deserializeCode += string.Format(PacketFormat.deserializeByteFormat, memberName, memberType);
+						serializeCode += string.Format(PacketFormat.serializeByteFormat, memberName, memberType);
+						break;
+					case "bool":
 					case "short":
 					case "ushort":
 					case "int":
@@ -95,7 +100,7 @@ namespace PacketGenerator
 					case "float":
 					case "double":
 						memberCode += string.Format(PacketFormat.memberFormat, memberType, memberName);
-						deserializeCode += string.Format(PacketFormat.deserializeFormat, memberName, GetDerializeMethodName(memberType), memberType);
+						deserializeCode += string.Format(PacketFormat.deserializeFormat, memberName, GetDeserializeMethodName(memberType), memberType);
 						serializeCode += string.Format(PacketFormat.serializeFormat, memberName, memberType);
 						break;
 					case "string":
@@ -153,7 +158,7 @@ namespace PacketGenerator
 			return new Tuple<string, string, string>(memberCode, deserializeCode, serializeCode);
 		}
 
-		public static string GetDerializeMethodName(string memberType)
+		public static string GetDeserializeMethodName(string memberType)
 		{
 			switch (memberType)
 			{

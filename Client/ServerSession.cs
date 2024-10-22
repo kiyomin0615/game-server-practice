@@ -5,49 +5,53 @@ using ServerCore;
 
 namespace Client
 {
-    public enum PacketId
+    public enum PacketID
     {
         PlayerInfoRequest = 1,
-        PlayerInfoResponse = 2
+        Test = 2,
+        
     }
 
     class PlayerInfoRequest
     {
+        public byte byteTest;
         public long playerId;
         public string playerName;
-
         public struct Skill
         {
             public int id;
             public ushort level;
             public float duration;
-
-            public bool Serialize(Span<byte> span, ref ushort count)
-            {
-                bool success = true;
-                success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), id);
-                count += sizeof(int);
-                success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), level);
-                count += sizeof(ushort);
-                success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), duration);
-                count += sizeof(float);
-
-                return success;
-            }
-
             public void Deserialize(ReadOnlySpan<byte> span, ref ushort count)
             {
                 id = BitConverter.ToInt32(span.Slice(count, span.Length - count));
                 count += sizeof(int);
+                
                 level = BitConverter.ToUInt16(span.Slice(count, span.Length - count));
                 count += sizeof(ushort);
+                
                 duration = BitConverter.ToSingle(span.Slice(count, span.Length - count));
                 count += sizeof(float);
+                
+            }
+            public bool Serialize(Span<byte> span, ref ushort count)
+            {
+                bool success = true;
+                success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), this.id);
+                count += sizeof(int);
+                
+                success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), this.level);
+                count += sizeof(ushort);
+                
+                success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), this.duration);
+                count += sizeof(float);
+                
+                return success;
             }
         }
-
+        
         public List<Skill> skills = new List<Skill>();
-
+        
         public void Deserialize(ArraySegment<byte> segment)
         {
             ushort count = 0;
@@ -56,16 +60,18 @@ namespace Client
 
             count += sizeof(ushort); // size
             count += sizeof(ushort); // id
-
-            this.playerId = BitConverter.ToInt64(span.Slice(count, span.Length - count));
+            this.byteTest = (byte)segment.Array[segment.Offset + count];
+            count += sizeof(byte);
+            
+            playerId = BitConverter.ToInt64(span.Slice(count, span.Length - count));
             count += sizeof(long);
-
+            
             ushort playerNameLength = BitConverter.ToUInt16(span.Slice(count, span.Length - count));
             count += sizeof(ushort);
             this.playerName = Encoding.Unicode.GetString(span.Slice(count, playerNameLength));
             count += playerNameLength;
-
-            skills.Clear();
+            
+            this.skills.Clear();
             ushort skillLength = BitConverter.ToUInt16(span.Slice(count, span.Length - count));
             count += sizeof(ushort);
             for (int i = 0; i < skillLength; i++)
@@ -74,6 +80,7 @@ namespace Client
                 skill.Deserialize(span, ref count);
                 skills.Add(skill);
             }
+            
         }
 
         public ArraySegment<byte> Serialize()
@@ -86,23 +93,26 @@ namespace Client
             Span<byte> span = new Span<byte>(segment.Array, segment.Offset, segment.Count);
 
             count += sizeof(ushort);
-            success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort)PacketId.PlayerInfoRequest);
+            success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort)PacketID.PlayerInfoRequest);
             count += sizeof(ushort);
+            segment.Array[segment.Offset + count] = (byte)this.byteTest;
+            count += sizeof(byte);
+            
             success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), this.playerId);
             count += sizeof(long);
-
+            
             ushort playerNameLength = (ushort)Encoding.Unicode.GetBytes(this.playerName, 0, this.playerName.Length, segment.Array, segment.Offset + count + sizeof(ushort));
             success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), playerNameLength);
             count += sizeof(ushort);
             count += playerNameLength;
-
+            
             success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort)skills.Count);
             count += sizeof(ushort);
-            foreach (Skill skill in skills)
+            foreach (Skill skill in this.skills)
             {
                 success &= skill.Serialize(span, ref count);
             }
-
+            
             success &= BitConverter.TryWriteBytes(span, count);
 
             if (success == false)
@@ -110,12 +120,6 @@ namespace Client
 
             return SendBufferHelper.Close(count);
         }
-    }
-
-    class PlayerInfoResponse
-    {
-        public int hp;
-        public int attack;
     }
 
     class ServerSession : Session

@@ -10,10 +10,10 @@ public enum PacketID
 	
 }
 
-
 class PlayerInfoRequest
 {
-    public long playerId;
+    public byte byteTest;
+	public long playerId;
 	public string playerName;
 	public struct Skill
 	{
@@ -58,7 +58,10 @@ class PlayerInfoRequest
 
         count += sizeof(ushort); // size
         count += sizeof(ushort); // id
-        playerId = BitConverter.ToInt64(span.Slice(count, span.Length - count));
+        this.byteTest = (byte)segment.Array[segment.Offset + count];
+		count += sizeof(byte);
+		
+		playerId = BitConverter.ToInt64(span.Slice(count, span.Length - count));
 		count += sizeof(long);
 		
 		ushort playerNameLength = BitConverter.ToUInt16(span.Slice(count, span.Length - count));
@@ -88,9 +91,12 @@ class PlayerInfoRequest
         Span<byte> span = new Span<byte>(segment.Array, segment.Offset, segment.Count);
 
         count += sizeof(ushort);
-        success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort)PacketId.PlayerInfoRequest);
+        success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort)PacketID.PlayerInfoRequest);
         count += sizeof(ushort);
-        success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), this.playerId);
+        segment.Array[segment.Offset + count] = (byte)this.byteTest;
+		count += sizeof(byte);
+		
+		success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), this.playerId);
 		count += sizeof(long);
 		
 		ushort playerNameLength = (ushort)Encoding.Unicode.GetBytes(this.playerName, 0, this.playerName.Length, segment.Array, segment.Offset + count + sizeof(ushort));
@@ -113,7 +119,6 @@ class PlayerInfoRequest
         return SendBufferHelper.Close(count);
     }
 }
-
 class Test
 {
     public int intTest;
@@ -140,7 +145,7 @@ class Test
         Span<byte> span = new Span<byte>(segment.Array, segment.Offset, segment.Count);
 
         count += sizeof(ushort);
-        success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort)PacketId.Test);
+        success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort)PacketID.Test);
         count += sizeof(ushort);
         success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), this.intTest);
 		count += sizeof(int);

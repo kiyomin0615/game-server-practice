@@ -7,6 +7,9 @@ namespace PacketGenerator
 	{
 		static string packetContent;
 
+		static ushort packetId;
+		static string packetEnums;
+
 		static void Main(string[] args)
 		{
 			XmlReaderSettings settings = new XmlReaderSettings()
@@ -26,7 +29,8 @@ namespace PacketGenerator
 					// System.Console.WriteLine(reader.Name + " " + reader["name"]);
 				}
 
-				File.WriteAllText("NewPacket.cs", packetContent);
+				string fileText = string.Format(PacketFormat.fileFormat, packetEnums, packetContent);
+				File.WriteAllText("NewPacket.cs", fileText);
 			}
 		}
 
@@ -47,6 +51,7 @@ namespace PacketGenerator
 
 			Tuple<string, string, string> result = ParsePacketContent(reader);
 			packetContent += string.Format(PacketFormat.packetFormat, packetName, result.Item1, result.Item2, result.Item3);
+			packetEnums += string.Format(PacketFormat.packetEnumFormat, packetName, ++packetId) + Environment.NewLine + "\t";
 		}
 
 		public static Tuple<string, string, string> ParsePacketContent(XmlReader reader)

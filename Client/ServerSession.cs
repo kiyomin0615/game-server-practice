@@ -24,41 +24,52 @@ namespace Client
     class PlayerInfoRequest : Packet
     {
         public long playerId;
+        public string playerName;
 
         public PlayerInfoRequest()
         {
             this.id = (ushort)PacketId.PlayerInfoRequest;
         }
 
-        public override void Deserialize(ArraySegment<byte> seg)
+        public override void Deserialize(ArraySegment<byte> segment)
         {
             ushort count = 0;
 
-            ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(seg.Array, seg.Offset, seg.Count);
+            ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(segment.Array, segment.Offset, segment.Count);
 
-            ushort size = BitConverter.ToUInt16(seg.Array, seg.Offset + count);
-            count += sizeof(ushort);
-            ushort id = BitConverter.ToUInt16(seg.Array, seg.Offset + count);
-            count += sizeof(ushort);
+            count += sizeof(ushort); // size
+            count += sizeof(ushort); // id
 
             this.playerId = BitConverter.ToInt64(span.Slice(count, span.Length - count));
             count += sizeof(long);
+
+            ushort playerNameLength = BitConverter.ToUInt16(span.Slice(count, span.Length - count));
+            count += sizeof(ushort);
+            this.playerName = Encoding.Unicode.GetString(span.Slice(count, playerNameLength));
         }
 
         public override ArraySegment<byte> Serialize()
         {
-            ArraySegment<byte> seg = SendBufferHelper.Open(4096);
+            ArraySegment<byte> segment = SendBufferHelper.Open(4096);
 
             ushort count = 0;
             bool success = true;
 
-            Span<byte> span = new Span<byte>(seg.Array, seg.Offset, seg.Count);
+            Span<byte> span = new Span<byte>(segment.Array, segment.Offset, segment.Count);
 
             count += sizeof(ushort);
             success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), this.id);
             count += sizeof(ushort);
             success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), this.playerId);
             count += sizeof(long);
+
+            // Case 01
+            ushort playerNameLength = (ushort)Encoding.Unicode.GetByteCount(this.playerName); // UTF-16
+            success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), playerNameLength);
+            count += sizeof(ushort);
+            Array.Copy(Encoding.Unicode.GetBytes(this.playerName), 0, segment.Array, count, playerNameLength);
+            count += playerNameLength;
+
             success &= BitConverter.TryWriteBytes(span, count);
 
             if (success == false)
@@ -90,7 +101,7 @@ namespace Client
         {
             Console.WriteLine($"OnConnect: {endPoint}");
 
-            PlayerInfoRequest packet = new PlayerInfoRequest() { playerId = 1001 };
+            PlayerInfoRequest packet = new PlayerInfoRequest() { playerId = 1001, playerName = "kiyomin" };
 
             ArraySegment<byte> sendBuffer = packet.Serialize();
 

@@ -12,13 +12,21 @@ namespace PacketGenerator
 
 		static void Main(string[] args)
 		{
+			string basePath = AppDomain.CurrentDomain.BaseDirectory;
+			string xmlPath = Path.Combine(basePath, "../PDL.xml");
+
 			XmlReaderSettings settings = new XmlReaderSettings()
 			{
 				IgnoreComments = true,
 				IgnoreWhitespace = true,
 			};
 
-			using (XmlReader reader = XmlReader.Create("PDL.xml", settings))
+			if (args.Length > 0)
+			{
+				xmlPath = args[0];
+			}
+
+			using (XmlReader reader = XmlReader.Create(xmlPath, settings))
 			{
 				reader.MoveToContent();
 				while (reader.Read())

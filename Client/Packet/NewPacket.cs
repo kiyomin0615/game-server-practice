@@ -10,7 +10,14 @@ public enum PacketID
 	
 }
 
-class PlayerInfoRequest
+public interface IPacket
+{
+	ushort Protocol { get; }
+	void Deserialize(ArraySegment<byte> segment);
+	ArraySegment<byte> Serialize();
+}
+
+class PlayerInfoRequest : IPacket
 {
     public byte byteTest;
 	public long playerId;
@@ -50,6 +57,8 @@ class PlayerInfoRequest
 	
 	public List<Skill> skills = new List<Skill>();
 	
+    public ushort Protocol { get { return (ushort)PacketID.PlayerInfoRequest; } }
+
     public void Deserialize(ArraySegment<byte> segment)
     {
         ushort count = 0;
@@ -119,9 +128,11 @@ class PlayerInfoRequest
         return SendBufferHelper.Close(count);
     }
 }
-class Test
+class Test : IPacket
 {
     public int intTest;
+    public ushort Protocol { get { return (ushort)PacketID.Test; } }
+
     public void Deserialize(ArraySegment<byte> segment)
     {
         ushort count = 0;

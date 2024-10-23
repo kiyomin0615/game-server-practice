@@ -7,6 +7,63 @@ namespace PacketGenerator
 {
     public class PacketFormat
     {
+        public static string managerFormat =
+@"using System;
+using System.Collections.Generic;
+using ServerCore;
+
+public class PacketManager
+{{
+    // Singleton Pattern
+    static PacketManager instance;
+    public static PacketManager Instance
+    {{
+        get
+        {{
+            if (instance == null)
+                instance = new PacketManager();
+            return instance;
+        }}
+    }}
+
+    Dictionary<ushort, Action<PacketSession, ArraySegment<byte>>> dict = new Dictionary<ushort, Action<PacketSession, ArraySegment<byte>>>();
+    Dictionary<ushort, Action<PacketSession, IPacket>> handlerDict = new Dictionary<ushort, Action<PacketSession, IPacket>>();
+
+    public void Register()
+    {{
+{0}
+    }}
+
+    public void OnPacketReceived(PacketSession session, ArraySegment<byte> buffer)
+    {{
+        // Deserialization
+        ushort count = 0;
+        ushort size = BitConverter.ToUInt16(buffer.Array, buffer.Offset + count);
+        count += 2;
+        ushort id = BitConverter.ToUInt16(buffer.Array, buffer.Offset + count);
+        count += 2;
+
+        Action<PacketSession, ArraySegment<byte>> action = null;
+        if (dict.TryGetValue(id, out action))
+            action.Invoke(session, buffer); // call HandlePacket()
+    }}
+
+    void HandlePacket<T>(PacketSession session, ArraySegment<byte> buffer) where T : IPacket, new()
+    {{
+        T packet = new T();
+        packet.Deserialize(buffer);
+        Action<PacketSession, IPacket> action = null;
+        if (handlerDict.TryGetValue(packet.Protocol, out action))
+            action.Invoke(session, packet); // call HandlePlayerInfoRequest()
+    }}
+}}
+";
+
+        public static string managerRegisterFormat = 
+@"
+        dict.Add((ushort)PacketID.{0}, HandlePacket<{0}>);
+        handlerDict.Add((ushort)PacketID.{0}, PacketHandler.Handle{0});";
+
         public static string fileFormat =
 @"using System;
 using System.Net;

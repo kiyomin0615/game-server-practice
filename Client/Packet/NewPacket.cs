@@ -5,8 +5,8 @@ using ServerCore;
 
 public enum PacketID
 {
-    PlayerInfoRequest = 1,
-	Test = 2,
+    C_PlayerInfoRequest = 1,
+	S_Test = 2,
 	
 }
 
@@ -17,7 +17,7 @@ public interface IPacket
 	ArraySegment<byte> Serialize();
 }
 
-class PlayerInfoRequest : IPacket
+class C_PlayerInfoRequest : IPacket
 {
     public byte byteTest;
 	public long playerId;
@@ -57,7 +57,7 @@ class PlayerInfoRequest : IPacket
 	
 	public List<Skill> skills = new List<Skill>();
 	
-    public ushort Protocol { get { return (ushort)PacketID.PlayerInfoRequest; } }
+    public ushort Protocol { get { return (ushort)PacketID.C_PlayerInfoRequest; } }
 
     public void Deserialize(ArraySegment<byte> segment)
     {
@@ -100,7 +100,7 @@ class PlayerInfoRequest : IPacket
         Span<byte> span = new Span<byte>(segment.Array, segment.Offset, segment.Count);
 
         count += sizeof(ushort);
-        success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort)PacketID.PlayerInfoRequest);
+        success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort)PacketID.C_PlayerInfoRequest);
         count += sizeof(ushort);
         segment.Array[segment.Offset + count] = (byte)this.byteTest;
 		count += sizeof(byte);
@@ -128,10 +128,10 @@ class PlayerInfoRequest : IPacket
         return SendBufferHelper.Close(count);
     }
 }
-class Test : IPacket
+class S_Test : IPacket
 {
     public int intTest;
-    public ushort Protocol { get { return (ushort)PacketID.Test; } }
+    public ushort Protocol { get { return (ushort)PacketID.S_Test; } }
 
     public void Deserialize(ArraySegment<byte> segment)
     {
@@ -156,7 +156,7 @@ class Test : IPacket
         Span<byte> span = new Span<byte>(segment.Array, segment.Offset, segment.Count);
 
         count += sizeof(ushort);
-        success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort)PacketID.Test);
+        success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort)PacketID.S_Test);
         count += sizeof(ushort);
         success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), this.intTest);
 		count += sizeof(int);

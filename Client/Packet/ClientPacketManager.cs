@@ -22,11 +22,8 @@ public class PacketManager
     public void Register()
     {
 
-        dict.Add((ushort)PacketID.PlayerInfoRequest, HandlePacket<PlayerInfoRequest>);
-        handlerDict.Add((ushort)PacketID.PlayerInfoRequest, PacketHandler.HandlePlayerInfoRequest);
-
-        dict.Add((ushort)PacketID.Test, HandlePacket<Test>);
-        handlerDict.Add((ushort)PacketID.Test, PacketHandler.HandleTest);
+        dict.Add((ushort)PacketID.S_Test, HandlePacket<S_Test>);
+        handlerDict.Add((ushort)PacketID.S_Test, PacketHandler.HandleS_Test);
 
     }
 

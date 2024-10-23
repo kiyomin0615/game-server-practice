@@ -6,20 +6,15 @@ using ServerCore;
 
 public class PacketHandler
 {
-    public static void HandlePlayerInfoRequest(PacketSession session, IPacket p)
+    public static void HandleC_PlayerInfoRequest(PacketSession session, IPacket p)
     {
-        PlayerInfoRequest packet = p as PlayerInfoRequest;
+        C_PlayerInfoRequest packet = p as C_PlayerInfoRequest;
 
-        Console.WriteLine($"PlayerInfoRequest\nPlayer ID: {packet.playerId}, Player Name: {packet.playerName}\n");
+        Console.WriteLine($"C_PlayerInfoRequest\nPlayer ID: {packet.playerId}, Player Name: {packet.playerName}\n");
 
-        foreach (PlayerInfoRequest.Skill skill in packet.skills)
+        foreach (C_PlayerInfoRequest.Skill skill in packet.skills)
         {
             Console.WriteLine($"Skill ID: {skill.id}, Skill Level: {skill.level}, Skill Duration: {skill.duration}\n");
         }
-    }
-
-    public static void HandleTest(PacketSession session, IPacket p)
-    {
-        // TODO
     }
 }

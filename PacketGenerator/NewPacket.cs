@@ -5,12 +5,12 @@ using ServerCore;
 
 public enum PacketID
 {
-    PlayerInfoRequest = 1,
+    C_PlayerInfoRequest = 1,
 	Test = 2,
 	
 }
 
-class PlayerInfoRequest
+class C_PlayerInfoRequest
 {
     public byte byteTest;
 	public long playerId;
@@ -91,7 +91,7 @@ class PlayerInfoRequest
         Span<byte> span = new Span<byte>(segment.Array, segment.Offset, segment.Count);
 
         count += sizeof(ushort);
-        success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort)PacketID.PlayerInfoRequest);
+        success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort)PacketID.C_PlayerInfoRequest);
         count += sizeof(ushort);
         segment.Array[segment.Offset + count] = (byte)this.byteTest;
 		count += sizeof(byte);

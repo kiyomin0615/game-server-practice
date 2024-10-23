@@ -11,11 +11,11 @@ namespace Client
         {
             Console.WriteLine($"OnConnect: {endPoint}");
 
-            PlayerInfoRequest packet = new PlayerInfoRequest() { playerId = 1001, playerName = "kiyomin" };
-            packet.skills.Add(new PlayerInfoRequest.Skill() { id = 101, level = 1, duration = 1.0f });
-            packet.skills.Add(new PlayerInfoRequest.Skill() { id = 201, level = 2, duration = 2.0f });
-            packet.skills.Add(new PlayerInfoRequest.Skill() { id = 301, level = 3, duration = 3.0f });
-            packet.skills.Add(new PlayerInfoRequest.Skill() { id = 401, level = 4, duration = 4.0f });
+            C_PlayerInfoRequest packet = new C_PlayerInfoRequest() { playerId = 1001, playerName = "kiyomin" };
+            packet.skills.Add(new C_PlayerInfoRequest.Skill() { id = 101, level = 1, duration = 1.0f });
+            packet.skills.Add(new C_PlayerInfoRequest.Skill() { id = 201, level = 2, duration = 2.0f });
+            packet.skills.Add(new C_PlayerInfoRequest.Skill() { id = 301, level = 3, duration = 3.0f });
+            packet.skills.Add(new C_PlayerInfoRequest.Skill() { id = 401, level = 4, duration = 4.0f });
 
             ArraySegment<byte> sendBuffer = packet.Serialize();
 

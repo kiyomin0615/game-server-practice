@@ -6,7 +6,7 @@ using ServerCore;
 
 public class PacketHandler
 {
-    public static void HandleC_PlayerInfoRequest(PacketSession session, IPacket p)
+    public static void HandleC_PlayerInfoRequestPacket(PacketSession session, IPacket p)
     {
         C_PlayerInfoRequest packet = p as C_PlayerInfoRequest;
 

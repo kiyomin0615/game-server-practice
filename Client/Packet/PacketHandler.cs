@@ -6,7 +6,7 @@ using ServerCore;
 
 public class PacketHandler
 {
-    public static void HandleS_Test(PacketSession session, IPacket p)
+    public static void HandleS_TestPacket(PacketSession session, IPacket p)
     {
         // TODO
     }

@@ -8,9 +8,7 @@ namespace PacketGenerator
     public class PacketFormat
     {
         public static string managerFormat =
-@"using System;
-using System.Collections.Generic;
-using ServerCore;
+@"using ServerCore;
 
 public class PacketManager
 {{
@@ -26,43 +24,45 @@ public class PacketManager
         }}
     }}
 
-    Dictionary<ushort, Action<PacketSession, ArraySegment<byte>>> dict = new Dictionary<ushort, Action<PacketSession, ArraySegment<byte>>>();
-    Dictionary<ushort, Action<PacketSession, IPacket>> handlerDict = new Dictionary<ushort, Action<PacketSession, IPacket>>();
+    Dictionary<ushort, Action<PacketSession, ArraySegment<byte>>> deserializerDict = new Dictionary<ushort, Action<PacketSession, ArraySegment<byte>>>();
+    Dictionary<ushort, Action<PacketSession, IPacket>> packetHandlerDict = new Dictionary<ushort, Action<PacketSession, IPacket>>();
 
     public void Register()
     {{
-{0}
+        {0}
     }}
 
-    public void OnPacketReceived(PacketSession session, ArraySegment<byte> buffer)
+    public void ProcessPacket(PacketSession session, ArraySegment<byte> buffer)
     {{
-        // Deserialization
         ushort count = 0;
+
         ushort size = BitConverter.ToUInt16(buffer.Array, buffer.Offset + count);
         count += 2;
+
         ushort id = BitConverter.ToUInt16(buffer.Array, buffer.Offset + count);
         count += 2;
 
         Action<PacketSession, ArraySegment<byte>> action = null;
-        if (dict.TryGetValue(id, out action))
-            action.Invoke(session, buffer); // call HandlePacket()
+        if (deserializerDict.TryGetValue(id, out action))
+            action.Invoke(session, buffer);
     }}
 
-    void HandlePacket<T>(PacketSession session, ArraySegment<byte> buffer) where T : IPacket, new()
+    void DeserializePacket<T>(PacketSession session, ArraySegment<byte> buffer) where T : IPacket, new()
     {{
         T packet = new T();
         packet.Deserialize(buffer);
+
         Action<PacketSession, IPacket> action = null;
-        if (handlerDict.TryGetValue(packet.Protocol, out action))
-            action.Invoke(session, packet); // call HandlePlayerInfoRequest()
+        if (packetHandlerDict.TryGetValue(packet.Protocol, out action))
+            action.Invoke(session, packet);
     }}
 }}
 ";
 
         public static string managerRegisterFormat = 
 @"
-        dict.Add((ushort)PacketID.{0}, HandlePacket<{0}>);
-        handlerDict.Add((ushort)PacketID.{0}, PacketHandler.Handle{0});";
+        deserializerDict.Add((ushort)PacketID.{0}, DeserializePacket<{0}>);
+        packetHandlerDict.Add((ushort)PacketID.{0}, PacketHandler.Handle{0}Packet);";
 
         public static string fileFormat =
 @"using System;

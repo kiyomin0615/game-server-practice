@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using ServerCore;
 
 public class PacketManager
@@ -16,37 +14,39 @@ public class PacketManager
         }
     }
 
-    Dictionary<ushort, Action<PacketSession, ArraySegment<byte>>> dict = new Dictionary<ushort, Action<PacketSession, ArraySegment<byte>>>();
-    Dictionary<ushort, Action<PacketSession, IPacket>> handlerDict = new Dictionary<ushort, Action<PacketSession, IPacket>>();
+    Dictionary<ushort, Action<PacketSession, ArraySegment<byte>>> deserializerDict = new Dictionary<ushort, Action<PacketSession, ArraySegment<byte>>>();
+    Dictionary<ushort, Action<PacketSession, IPacket>> packetHandlerDict = new Dictionary<ushort, Action<PacketSession, IPacket>>();
 
     public void Register()
     {
-
-        dict.Add((ushort)PacketID.C_PlayerInfoRequest, HandlePacket<C_PlayerInfoRequest>);
-        handlerDict.Add((ushort)PacketID.C_PlayerInfoRequest, PacketHandler.HandleC_PlayerInfoRequest);
+        
+        deserializerDict.Add((ushort)PacketID.C_PlayerInfoRequest, DeserializePacket<C_PlayerInfoRequest>);
+        packetHandlerDict.Add((ushort)PacketID.C_PlayerInfoRequest, PacketHandler.HandleC_PlayerInfoRequestPacket);
 
     }
 
-    public void OnPacketReceived(PacketSession session, ArraySegment<byte> buffer)
+    public void ProcessPacket(PacketSession session, ArraySegment<byte> buffer)
     {
-        // Deserialization
         ushort count = 0;
+
         ushort size = BitConverter.ToUInt16(buffer.Array, buffer.Offset + count);
         count += 2;
+
         ushort id = BitConverter.ToUInt16(buffer.Array, buffer.Offset + count);
         count += 2;
 
         Action<PacketSession, ArraySegment<byte>> action = null;
-        if (dict.TryGetValue(id, out action))
-            action.Invoke(session, buffer); // call HandlePacket()
+        if (deserializerDict.TryGetValue(id, out action))
+            action.Invoke(session, buffer);
     }
 
-    void HandlePacket<T>(PacketSession session, ArraySegment<byte> buffer) where T : IPacket, new()
+    void DeserializePacket<T>(PacketSession session, ArraySegment<byte> buffer) where T : IPacket, new()
     {
         T packet = new T();
         packet.Deserialize(buffer);
+
         Action<PacketSession, IPacket> action = null;
-        if (handlerDict.TryGetValue(packet.Protocol, out action))
-            action.Invoke(session, packet); // call HandlePlayerInfoRequest()
+        if (packetHandlerDict.TryGetValue(packet.Protocol, out action))
+            action.Invoke(session, packet);
     }
 }

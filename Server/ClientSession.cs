@@ -35,7 +35,7 @@ namespace Server
 
         public override void OnPacketReceived(ArraySegment<byte> buffer)
         {
-            PacketManager.Instance.OnPacketReceived(this, buffer);
+            PacketManager.Instance.ProcessPacket(this, buffer);
         }
 
         public override void OnSent(int numOfBytes)

@@ -12,18 +12,21 @@ namespace ServerCore
         Socket listenerSocket;
         Func<Session> sessionFactory;
 
-        public void Init(IPEndPoint endPoint, Func<Session> sessionFactory)
+        public void Init(IPEndPoint endPoint, Func<Session> sessionFactory, int count = 10, int backlog = 100)
         {
             this.listenerSocket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp); // TCP 프로토콜
             this.sessionFactory += sessionFactory;
 
             listenerSocket.Bind(endPoint);
 
-            listenerSocket.Listen(10); // 최대 대기 가능한 클라이언트 숫자: 10
+            listenerSocket.Listen(backlog); // 최대 대기 가능한 클라이언트 숫자: backlog
 
-            SocketAsyncEventArgs args = new SocketAsyncEventArgs(); // 비동기 이벤트에 대한 정보를 갖는다
-            args.Completed += new EventHandler<SocketAsyncEventArgs>(OnClientAcceptCompleted); // 비동기 이벤트가 완료되면 실행될 이벤트 핸들러 등록
-            StartAcceptingClients(args);
+            for (int i = 0; i < count; i++)
+            {
+                SocketAsyncEventArgs args = new SocketAsyncEventArgs(); // 비동기 이벤트에 대한 정보를 갖는다
+                args.Completed += new EventHandler<SocketAsyncEventArgs>(OnClientAcceptCompleted); // 비동기 이벤트가 완료되면 실행될 이벤트 핸들러 등록
+                StartAcceptingClients(args);
+            }
         }
 
         void StartAcceptingClients(SocketAsyncEventArgs args)

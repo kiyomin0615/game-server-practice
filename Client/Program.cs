@@ -19,7 +19,7 @@ namespace Client
             connector.Connect(endPoint, () =>
             {
                 return SessionManager.Instance.GenerateSession();
-            }, 10);
+            }, 100);
 
             while (true)
             {

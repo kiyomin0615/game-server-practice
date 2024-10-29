@@ -1,27 +1,23 @@
+using ServerCore;
+
 namespace Server
 {
     public class GameRoom
     {
-        object lockObject = new object();
-
         List<ClientSession> sessions = new List<ClientSession>();
+
+        JobQueue jobQueue = new JobQueue();
 
         public void Enter(ClientSession session)
         {
-            lock (lockObject)
-            {
-                sessions.Add(session);
-                session.GameRoom = this;
-            }
+            sessions.Add(session);
+            session.GameRoom = this;
         }
 
         public void Exit(ClientSession session)
         {
-            lock (lockObject)
-            {
-                sessions.Remove(session);
-                session.GameRoom = null;
-            }
+            sessions.Remove(session);
+            session.GameRoom = null;
         }
 
         public void BroadCast(ClientSession session, string chat)
@@ -33,13 +29,20 @@ namespace Server
 
             ArraySegment<byte> segment = chatPacket.Serialize();
 
-            lock (lockObject)
+            foreach (ClientSession s in sessions)
             {
-                foreach (ClientSession s in sessions)
-                {
-                    s.Send(segment);
-                }
+                s.Send(segment);
             }
+        }
+
+        public void PushAction(Action job)
+        {
+            jobQueue.Push(job);
+        }
+
+        public Action PopAction()
+        {
+            return jobQueue.Pop();
         }
     }
 }

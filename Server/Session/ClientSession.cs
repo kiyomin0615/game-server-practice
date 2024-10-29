@@ -12,9 +12,7 @@ namespace Server
         {
             Console.WriteLine($"클라이언트({endPoint})와 연결 성공.");
 
-            // TODO: 채팅방 입장
-            Program.GameRoom.Enter(this);
-
+            Program.GameRoom.PushAction(() => { Program.GameRoom.Enter(this); });
         }
 
         public override void OnDisconnected(EndPoint endPoint)
@@ -23,7 +21,8 @@ namespace Server
 
             if (GameRoom != null)
             {
-                GameRoom.Exit(this);
+                GameRoom room = GameRoom;
+                Program.GameRoom.PushAction(() => { room.Exit(this); });
                 GameRoom = null;
             }
 

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
+﻿using System.Net;
 using ServerCore;
 
 namespace Server
@@ -9,6 +6,7 @@ namespace Server
     class Program
     {
         static Listener listener = new Listener();
+        public static GameRoom GameRoom = new GameRoom();
 
         static void Main(string[] args)
         {
@@ -21,7 +19,7 @@ namespace Server
 
             listener.Init(endPoint, () =>
             {
-                return new ClientSession();
+                return SessionManager.Instance.GenerateSession();
             });
             Console.WriteLine("Listening...");
 

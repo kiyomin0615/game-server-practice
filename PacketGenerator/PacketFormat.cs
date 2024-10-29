@@ -196,7 +196,7 @@ count += sizeof({1});
         public static string deserializeStringFormat =
 @"ushort {0}Length = BitConverter.ToUInt16(span.Slice(count, span.Length - count));
 count += sizeof(ushort);
-this.playerName = Encoding.Unicode.GetString(span.Slice(count, {0}Length));
+this.{0} = Encoding.Unicode.GetString(span.Slice(count, {0}Length));
 count += {0}Length;
 ";
 

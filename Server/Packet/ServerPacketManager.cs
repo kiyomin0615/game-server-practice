@@ -20,8 +20,8 @@ public class PacketManager
     public void Register()
     {
         
-        deserializerDict.Add((ushort)PacketID.C_PlayerInfoRequest, DeserializePacket<C_PlayerInfoRequest>);
-        packetHandlerDict.Add((ushort)PacketID.C_PlayerInfoRequest, PacketHandler.HandleC_PlayerInfoRequestPacket);
+        deserializerDict.Add((ushort)PacketID.C_Chat, DeserializePacket<C_Chat>);
+        packetHandlerDict.Add((ushort)PacketID.C_Chat, PacketHandler.HandleC_ChatPacket);
 
     }
 

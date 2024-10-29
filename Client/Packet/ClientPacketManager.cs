@@ -20,8 +20,8 @@ public class PacketManager
     public void Register()
     {
         
-        deserializerDict.Add((ushort)PacketID.S_Test, DeserializePacket<S_Test>);
-        packetHandlerDict.Add((ushort)PacketID.S_Test, PacketHandler.HandleS_TestPacket);
+        deserializerDict.Add((ushort)PacketID.S_Chat, DeserializePacket<S_Chat>);
+        packetHandlerDict.Add((ushort)PacketID.S_Chat, PacketHandler.HandleS_ChatPacket);
 
     }
 

@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
-using System.Threading.Tasks;
-using System.Text;
 using System.Net;
 
 namespace ServerCore
@@ -58,6 +53,15 @@ namespace ServerCore
 
         int isDisconnected = 0;
 
+        void Clear()
+        {
+            lock (lockObject)
+            {
+                sendQueue.Clear();
+                pendingList.Clear();
+            }
+        }
+
         public void Start(Socket sessionSocket)
         {
             this.sessionSocket = sessionSocket;
@@ -76,10 +80,17 @@ namespace ServerCore
             ArraySegment<byte> writeSegment = receiveBuffer.writeSegment;
             receiveArgs.SetBuffer(writeSegment.Array, writeSegment.Offset, writeSegment.Count);
 
-            bool isPending = sessionSocket.ReceiveAsync(receiveArgs);
-            if (!isPending)
+            try
             {
-                OnReceiveCompleted(null, receiveArgs);
+                bool isPending = sessionSocket.ReceiveAsync(receiveArgs);
+                if (!isPending)
+                {
+                    OnReceiveCompleted(null, receiveArgs);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"StartReceiving Failed : {e}");
             }
         }
 
@@ -138,6 +149,9 @@ namespace ServerCore
 
         void StartSending()
         {
+            if (isDisconnected == 1)
+                return;
+
             while (sendQueue.Count > 0)
             {
                 ArraySegment<byte> sendBuffer = this.sendQueue.Dequeue();
@@ -145,10 +159,17 @@ namespace ServerCore
             }
             sendArgs.BufferList = pendingList; // BufferList.Add()를 사용하지 말고 직접 할당해라
 
-            bool isPending = sessionSocket.SendAsync(sendArgs);
-            if (!isPending)
+            try
             {
-                OnSendCompleted(null, sendArgs);
+                bool isPending = sessionSocket.SendAsync(sendArgs);
+                if (!isPending)
+                {
+                    OnSendCompleted(null, sendArgs);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"StartSending Failed : {e}");
             }
         }
 
@@ -187,14 +208,14 @@ namespace ServerCore
         public void Disconnect()
         {
             if (Interlocked.Exchange(ref isDisconnected, 1) == 1)
-            {
                 return;
-            }
 
             OnDisconnected(sessionSocket.RemoteEndPoint);
 
             sessionSocket.Shutdown(SocketShutdown.Both); // 클라이언트와 서버 사이의 데이터 송수신 종료
             sessionSocket.Close(); // 클라이언트의 연결 끊기
+
+            Clear();
         }
     }
 }

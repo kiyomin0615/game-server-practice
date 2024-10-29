@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
 namespace PacketGenerator
 {
     public class PacketFormat
@@ -13,19 +8,16 @@ namespace PacketGenerator
 public class PacketManager
 {{
     // Singleton Pattern
-    static PacketManager instance;
-    public static PacketManager Instance
-    {{
-        get
-        {{
-            if (instance == null)
-                instance = new PacketManager();
-            return instance;
-        }}
-    }}
+    static PacketManager instance = new PacketManager();
+    public static PacketManager Instance {{ get {{ return instance; }} }}
 
     Dictionary<ushort, Action<PacketSession, ArraySegment<byte>>> deserializerDict = new Dictionary<ushort, Action<PacketSession, ArraySegment<byte>>>();
     Dictionary<ushort, Action<PacketSession, IPacket>> packetHandlerDict = new Dictionary<ushort, Action<PacketSession, IPacket>>();
+
+    public PacketManager()
+    {{
+        Register();
+    }}
 
     public void Register()
     {{

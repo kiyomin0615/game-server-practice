@@ -18,20 +18,21 @@ namespace Client
             Connector connector = new Connector();
             connector.Connect(endPoint, () =>
             {
-                return new ServerSession();
-            });
+                return SessionManager.Instance.GenerateSession();
+            }, 10);
 
             while (true)
             {
                 try
                 {
-                    Console.WriteLine("Client is running...");
-                    Thread.Sleep(2000);
+                    SessionManager.Instance.SendChatFromAllSessions();
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e.ToString());
                 }
+
+                Thread.Sleep(250);
             }
         }
     }

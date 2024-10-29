@@ -8,6 +8,12 @@ namespace Server
         static Listener listener = new Listener();
         public static GameRoom GameRoom = new GameRoom();
 
+        static void FlushGameRoomPackets()
+        {
+            GameRoom.PushAction(() => GameRoom.FlushPackets());
+            JobTimer.Instance.Push(FlushGameRoomPackets, 250);
+        }
+
         static void Main(string[] args)
         {
             string hostName = Dns.GetHostName(); // 호스트 네임
@@ -21,10 +27,11 @@ namespace Server
             });
             Console.WriteLine("Listening...");
 
+            JobTimer.Instance.Push(FlushGameRoomPackets);
+
             while (true)
             {
-                GameRoom.PushAction(() => GameRoom.FlushPackets());
-                Thread.Sleep(250);
+                JobTimer.Instance.Flush();
             }
         }
     }

@@ -19,7 +19,7 @@ namespace Client
 
         public override void OnPacketReceived(ArraySegment<byte> buffer)
         {
-            PacketManager.Instance.ProcessPacket(this, buffer);
+            PacketManager.Instance.ProcessPacket(this, buffer, (PacketSession session, IPacket packet) => { PacketQueue.Instance.Push(packet); });
         }
 
         public override void OnSent(int numOfBytes)

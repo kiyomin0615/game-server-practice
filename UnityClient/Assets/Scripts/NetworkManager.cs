@@ -22,8 +22,14 @@ public class NetworkManager : MonoBehaviour
             });
     }
 
+    // 메인 쓰레드에서 패킷 처리
     void Update()
     {
+        IPacket packet = PacketQueue.Instance.Pop();
 
+        if (packet != null)
+        {
+            PacketManager.Instance.HandlePacket(serverSession, packet);
+        }
     }
 }

@@ -100,8 +100,6 @@ public interface IPacket
     {{
         ushort count = 0;
 
-        ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(segment.Array, segment.Offset, segment.Count);
-
         count += sizeof(ushort); // size
         count += sizeof(ushort); // id
         {2}
@@ -112,18 +110,13 @@ public interface IPacket
         ArraySegment<byte> segment = SendBufferHelper.Open(4096);
 
         ushort count = 0;
-        bool success = true;
-
-        Span<byte> span = new Span<byte>(segment.Array, segment.Offset, segment.Count);
 
         count += sizeof(ushort);
-        success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort)PacketID.{0});
+
+        Array.Copy(BitConverter.GetBytes((ushort)PacketID.{0}), 0, segment.Array, segment.Offset + count, sizeof(ushort));
         count += sizeof(ushort);
         {3}
-        success &= BitConverter.TryWriteBytes(span, count);
-
-        if (success == false)
-            return null;
+        Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
 
         return SendBufferHelper.Close(count);
     }}
@@ -148,11 +141,11 @@ public interface IPacket
 @"public struct {0}
 {{
     {2}
-    public void Deserialize(ReadOnlySpan<byte> span, ref ushort count)
+    public void Deserialize(ArraySegment<byte> segment, ref ushort count)
     {{
         {3}
     }}
-    public bool Serialize(Span<byte> span, ref ushort count)
+    public bool Serialize(ArraySegment<byte> segment, ref ushort count)
     {{
         bool success = true;
         {4}
@@ -169,7 +162,7 @@ public List<{0}> {1}s = new List<{0}>();
          * {2} : member type
          */
         public static string deserializeFormat =
-@"{0} = BitConverter.{1}(span.Slice(count, span.Length - count));
+@"this.{0} = BitConverter.{1}(segment.Array, segment.Offset + count);
 count += sizeof({2});
 ";
 
@@ -186,9 +179,9 @@ count += sizeof({1});
          * {0} : member name
          */
         public static string deserializeStringFormat =
-@"ushort {0}Length = BitConverter.ToUInt16(span.Slice(count, span.Length - count));
+@"ushort {0}Length = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
 count += sizeof(ushort);
-this.{0} = Encoding.Unicode.GetString(span.Slice(count, {0}Length));
+this.{0} = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, {0}Length);
 count += {0}Length;
 ";
 
@@ -198,7 +191,7 @@ count += {0}Length;
          */
         public static string deserializeListFormat =
 @"this.{1}s.Clear();
-ushort {1}Length = BitConverter.ToUInt16(span.Slice(count, span.Length - count));
+ushort {1}Length = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
 count += sizeof(ushort);
 for (int i = 0; i < {1}Length; i++)
 {{
@@ -213,7 +206,7 @@ for (int i = 0; i < {1}Length; i++)
          * {1} : member type
          */
         public static string serializeFormat =
-@"success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), this.{0});
+@"Array.Copy(BitConverter.GetBytes(this.{0}), 0, segment.Array, segment.Offset + count, sizeof({1}));
 count += sizeof({1});
 ";
 
@@ -231,7 +224,7 @@ count += sizeof({1});
          */
         public static string serializeStringFormat =
 @"ushort {0}Length = (ushort)Encoding.Unicode.GetBytes(this.{0}, 0, this.{0}.Length, segment.Array, segment.Offset + count + sizeof(ushort));
-success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), {0}Length);
+Array.Copy(BitConverter.GetBytes({0}Length), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 count += sizeof(ushort);
 count += {0}Length;
 ";
@@ -241,11 +234,11 @@ count += {0}Length;
          * {1} : item name
          */
         public static string serializeListFormat =
-@"success &= BitConverter.TryWriteBytes(span.Slice(count, span.Length - count), (ushort){1}s.Count);
+@"Array.Copy(BitConverter.GetBytes((ushort){1}s.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 count += sizeof(ushort);
 foreach ({0} {1} in this.{1}s)
 {{
-    success &= {1}.Serialize(span, ref count);
+    {1}.Serialize(segment, ref count);
 }}
 ";
     }

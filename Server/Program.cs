@@ -23,12 +23,8 @@ namespace Server
 
             while (true)
             {
-                /*
-                    기존의 서버 코드는 메인 스레드에서 아무 작업도 수행하지 않고 있었습니다.
-                    C# 콘솔 애플리케이션에서 메인 스레드가 아무 작업도 하지 않으면, 가비지 컬렉션이나 다른 백그라운드 작업들이 제대로 실행되지 않을 수 있습니다.
-                */
-                Console.WriteLine("Server is running...");
-                Thread.Sleep(2000);
+                GameRoom.PushAction(() => GameRoom.FlushPackets());
+                Thread.Sleep(250);
             }
         }
     }

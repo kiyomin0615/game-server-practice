@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
 namespace ServerCore
 {
     public class SendBufferHelper
@@ -10,7 +5,7 @@ namespace ServerCore
         // 서로 다른 세션 사이에서 버퍼는 공유되지만,
         // 서로 다른 쓰레드 사이에서 버퍼는 공유되지 않는다
         public static ThreadLocal<SendBuffer> currentBuffer = new ThreadLocal<SendBuffer>(() => { return null; });
-        public static int chunkSize { get; set; } = 1024 * 4 * 100;
+        public static int chunkSize { get; set; } = 65535 * 100;
 
         public static ArraySegment<byte> Open(int reserveSize)
         {

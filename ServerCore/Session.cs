@@ -10,6 +10,7 @@ namespace ServerCore
         public sealed override int OnReceived(ArraySegment<byte> buffer)
         {
             int processLength = 0;
+            int packetCount = 0;
 
             while (true)
             {
@@ -21,10 +22,14 @@ namespace ServerCore
                     break;
 
                 OnPacketReceived(new ArraySegment<byte>(buffer.Array, buffer.Offset, dataSize));
+                packetCount++;
 
-                processLength = dataSize;
+                processLength += dataSize;
                 buffer = new ArraySegment<byte>(buffer.Array, buffer.Offset + dataSize, buffer.Count - dataSize);
             }
+
+            if (packetCount > 1)
+                Console.WriteLine($"{packetCount} 패킷 수신.");
 
             return processLength;
         }
@@ -37,7 +42,7 @@ namespace ServerCore
     {
         Socket sessionSocket;
 
-        ReceiveBuffer receiveBuffer = new ReceiveBuffer(1024);
+        ReceiveBuffer receiveBuffer = new ReceiveBuffer(65535);
 
         object lockObject = new object();
 
@@ -140,6 +145,25 @@ namespace ServerCore
             lock (lockObject)
             {
                 sendQueue.Enqueue(sendBuffer);
+                if (pendingList.Count == 0)
+                {
+                    StartSending();
+                }
+            }
+        }
+
+        public void Send(List<ArraySegment<byte>> sendBufferList)
+        {
+            if (sendBufferList.Count == 0)
+                return;
+
+            lock (lockObject)
+            {
+                foreach (ArraySegment<byte> sendBuffer in sendBufferList)
+                {
+                    sendQueue.Enqueue(sendBuffer);
+                }
+
                 if (pendingList.Count == 0)
                 {
                     StartSending();

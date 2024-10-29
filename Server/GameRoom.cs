@@ -7,6 +7,7 @@ namespace Server
         List<ClientSession> sessions = new List<ClientSession>();
 
         JobQueue jobQueue = new JobQueue();
+        List<ArraySegment<byte>> pendingList = new List<ArraySegment<byte>>();
 
         public void Enter(ClientSession session)
         {
@@ -29,10 +30,19 @@ namespace Server
 
             ArraySegment<byte> segment = chatPacket.Serialize();
 
+            pendingList.Add(segment);
+        }
+
+        public void FlushPackets()
+        {
             foreach (ClientSession s in sessions)
             {
-                s.Send(segment);
+                s.Send(pendingList);
             }
+
+            Console.WriteLine($"{pendingList.Count} 패킷 송신.");
+
+            pendingList.Clear();
         }
 
         public void PushAction(Action job)

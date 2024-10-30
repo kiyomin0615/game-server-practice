@@ -1,4 +1,6 @@
+using System;
 using System.Net;
+using System.Collections;
 using UnityEngine;
 using ServerCore;
 using Client;
@@ -20,6 +22,8 @@ public class NetworkManager : MonoBehaviour
             {
                 return serverSession;
             });
+        
+        StartCoroutine("CoSendPacket");
     }
 
     // 메인 쓰레드에서 패킷 처리
@@ -30,6 +34,21 @@ public class NetworkManager : MonoBehaviour
         if (packet != null)
         {
             PacketManager.Instance.HandlePacket(serverSession, packet);
+        }
+    }
+
+    IEnumerator CoSendPacket()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(3.0f);
+
+            C_Chat chatPacket = new C_Chat();
+            chatPacket.chat = "Hello Unity!";
+
+            ArraySegment<byte> segment = chatPacket.Serialize();
+
+            serverSession.Send(segment);
         }
     }
 }
